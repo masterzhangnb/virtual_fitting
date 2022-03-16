@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head> 
+<meta charset="utf-8"> 
+<title>virtualFitting</title> 
+</head>
+<body>
+
+    <canvas id="model"  width="1188" height="1781" style="border:1px solid rgb(255, 0, 0);margin:20px auto;display: block;">
+        当前浏览器不支持canvas
+        <!-- 如果浏览器支持canvas，则canvas标签里的内容不会显示出来 -->
+    </canvas>
+    <script src="./js/build/three.js"></script>
+    <script src="./js/examples/js/controls/OrbitControls.js"></script>
+    <script src="./js/examples/js/loaders/OBJLoader.js"></script>
+    <script type="module">
+
+    import { GUI } from './js/examples/jsm/libs/lil-gui.module.min.js';
+
+    var camera,scene,renderer,view, texture,gui;
+    init();
+    animate();
+
+    function init(){
+        var cvs = document.getElementById("model");
+        //创建image对象
+        var imgObj = new Image();
+        imgObj.src = "./data/model/hard/model.png";
+        // 待图片加载完后，将其显示在canvas上
+        imgObj.onload = function(){
+                var ctx = cvs.getContext('2d');
+                ctx.drawImage(this, 0, 0); // 改变图片的大小到1024*768
+        }
+
+        initOBJ();
+
+        view = new View(cvs,cvs.width,cvs.height,0,0,cvs.width,cvs.height);
+
+        scene = new THREE.Scene();
+    
+        // 辅助坐标系  参数250表示坐标系大小，可以根据场景大小去设置
+        var axisHelper = new THREE.AxisHelper(250);
+        scene.add(axisHelper);
+    
+        const light = new THREE.DirectionalLight( 0xffffff );
+        light.position.set( 0, 0, 1 ).normalize();
+        scene.add( light );
+    
+    
+        renderer = new THREE.WebGLRenderer( { antialias: true,alpha:true } );
+        renderer.setSize( cvs.width,cvs.height );
+    }
+
+    function initOBJ(){
+        var OBJLoader = new THREE.OBJLoader(); //obj加载器
+
+        OBJLoader.load('./data/model/hard/clothing.obj',
+            function (obj) {
+                // 加载后的一些编辑操作
+                obj.children[0].geometry.center(); // 网格模型的几何体居中
+                obj.children[0].rotateX(Math.PI);
+                // 更换纹理贴图
+                obj.children[0].scale.set(0.73,0.73,1);
+                obj.children[0].translateY(0);
+                obj.children[0].translateX(2);
+                texture = new THREE.TextureLoader().load("./data/cloth/A9800.png");
+                obj.children[0].material.map=texture;
+                texture.wrapT= THREE.MirroredRepeatWrapping;
+                texture.wrapS = THREE.MirroredRepeatWrapping;
+                texture.needsUpdate = true;
+                
+                scene.add(obj);
+            }
+        )
+    }
+
+    function View( canvas, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight ) {
+
+        canvas.width = fullWidth;
+        canvas.height = fullHeight;
+    
+        var context = canvas.getContext( '2d' );
+
+        camera = new THREE.PerspectiveCamera( 20, viewWidth / viewHeight, 1, 10000 );
+    
+        camera.setViewOffset( fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight );
+    
+        camera.position.z = 1800;
+
+        this.render = function () {
+            camera.lookAt( scene.position );
+            renderer.setViewport( 0, 0, viewWidth, viewHeight );
+            renderer.render( scene, camera );
+            context.drawImage( renderer.domElement, 0, 0 );
+        };
+    }
+
+    function animate() {
+        view.render();
+        requestAnimationFrame( animate );
+    }
+
+</script>
+
+</body>
+</html>
