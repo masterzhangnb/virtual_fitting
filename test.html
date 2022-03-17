@@ -17,9 +17,14 @@
 
     import { GUI } from './js/examples/jsm/libs/lil-gui.module.min.js';
 
-    var camera,scene,renderer,view, texture,gui;
+    var camera,scene,renderer,view,gui;
     init();
     animate();
+
+    function call(a){
+        console.log(a);
+    }
+    call("asd");
 
     function init(){
         var cvs = document.getElementById("model");
@@ -28,11 +33,12 @@
         imgObj.src = "./data/model/hard/model.png";
         // 待图片加载完后，将其显示在canvas上
         imgObj.onload = function(){
-                var ctx = cvs.getContext('2d');
-                ctx.drawImage(this, 0, 0); // 改变图片的大小到1024*768
+            var ctx = cvs.getContext('2d');
+            ctx.drawImage(this, 0, 0); // 改变图片的大小到1024*768
         }
 
         initOBJ();
+
 
         view = new View(cvs,cvs.width,cvs.height,0,0,cvs.width,cvs.height);
 
@@ -45,8 +51,7 @@
         const light = new THREE.DirectionalLight( 0xffffff );
         light.position.set( 0, 0, 1 ).normalize();
         scene.add( light );
-    
-    
+
         renderer = new THREE.WebGLRenderer( { antialias: true,alpha:true } );
         renderer.setSize( cvs.width,cvs.height );
     }
@@ -54,24 +59,45 @@
     function initOBJ(){
         var OBJLoader = new THREE.OBJLoader(); //obj加载器
 
-        OBJLoader.load('./data/model/hard/clothing.obj',
+        OBJLoader.load('./data/model/hard/untitled.obj',
             function (obj) {
                 // 加载后的一些编辑操作
-                obj.children[0].geometry.center(); // 网格模型的几何体居中
-                obj.children[0].rotateX(Math.PI);
-                // 更换纹理贴图
-                obj.children[0].scale.set(0.73,0.73,1);
-                obj.children[0].translateY(0);
-                obj.children[0].translateX(2);
-                texture = new THREE.TextureLoader().load("./data/cloth/A9800.png");
-                obj.children[0].material.map=texture;
-                texture.wrapT= THREE.MirroredRepeatWrapping;
-                texture.wrapS = THREE.MirroredRepeatWrapping;
-                texture.needsUpdate = true;
-                
+                obj.rotateX(- 0.5 * Math.PI);
+                obj.scale.set(0.74,1,0.74);
+                obj.translateX(5.5);
+                obj.translateZ(-4);
+
+                var maxObjBox = new THREE.Box3().setFromObject(obj.getObjectByName("clothing_1"));
+
+                obj.traverse(function(obj) {
+                    if (obj.type === "Mesh") 
+                        initTexture(obj, maxObjBox, "./data/cloth/A9960.png");
+                })
+
                 scene.add(obj);
             }
         )
+        
+    }
+
+    function initTexture(obj, maxObjBox, textureFile){
+        var maxObjBoxAera = (maxObjBox.max.x - maxObjBox.min.x) * (maxObjBox.max.y - maxObjBox.min.y) // 最大模型的包围盒面积
+
+        var objBox = new THREE.Box3().setFromObject(obj); // 最大模型的包围盒
+        var objBoxArea = (objBox.max.x - objBox.min.x) * (objBox.max.y - objBox.min.y) // 最大模型的包围盒
+
+        var texture = new THREE.TextureLoader().load(textureFile);
+        texture.wrapT= THREE.MirroredRepeatWrapping;
+        texture.wrapS = THREE.MirroredRepeatWrapping;
+        texture.needsUpdate = true;
+
+        obj.material.map=texture;
+
+        texture.matrix.identity().scale(maxObjBoxAera/objBoxArea, maxObjBoxAera/objBoxArea) // 按比例放大纹理
+
+        var offsetX = objBox.max.x + objBox.min.x - maxObjBox.max.x - maxObjBox.min.x;
+        var offsetY = objBox.max.y + objBox.min.y - maxObjBox.max.y - maxObjBox.min.y;
+        texture.offset.set(offsetX, offsetY) // 按相对最大模型的位置移动纹理
     }
 
     function View( canvas, fullWidth, fullHeight, viewX, viewY, viewWidth, viewHeight ) {
