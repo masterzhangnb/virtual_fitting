@@ -59,7 +59,7 @@
     function initOBJ(){
         var OBJLoader = new THREE.OBJLoader(); //obj加载器
 
-        OBJLoader.load('./data/model/hard/untitled.obj',
+        OBJLoader.load('./data/model/hard/0.05/untitled.obj',
             function (obj) {
                 // 加载后的一些编辑操作
                 obj.rotateX(- 0.5 * Math.PI);
@@ -71,7 +71,7 @@
 
                 obj.traverse(function(obj) {
                     if (obj.type === "Mesh") 
-                        initTexture(obj, maxObjBox, "./data/cloth/A9960.png");
+                        initTexture(obj, maxObjBox, "./data/cloth/A9961.png");
                 })
 
                 scene.add(obj);
